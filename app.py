@@ -42,16 +42,15 @@ if st.button("検索開始"):
                 d_res = requests.get(url, headers=headers)
                 d_soup = BeautifulSoup(d_res.text, 'html.parser')
                 
-                # 1. 日時の取得（「開催日時」の隣のセルを探す）
+                # 1. 日時の取得
                 time_th = d_soup.find('th', string=lambda text: text and '開催日時' in text)
                 if time_th and time_th.find_next_sibling('td'):
                     raw_time = time_th.find_next_sibling('td').get_text(separator=' ', strip=True)
-                    # 「Googleカレンダー」などの余計なボタン文字をカット
                     event_time = raw_time.split('Google')[0].strip()
                 else:
                     event_time = "不明"
                 
-                # 2. 場所の取得（「会場」の隣のセルを探す）
+                # 2. 場所の取得
                 venue_th = d_soup.find('th', string=lambda text: text and '会場' in text)
                 if venue_th and venue_th.find_next_sibling('td'):
                     raw_location = venue_th.find_next_sibling('td').get_text(separator=' ', strip=True)
@@ -81,9 +80,32 @@ if st.button("検索開始"):
                 # 進捗バーを更新
                 my_bar.progress((i + 1) / len(cards), text=f"データ収集中... ({i+1}/{len(cards)}件完了)")
                 
-            # 完了したらバーを消してテーブルを表示
+            # 完了したらバーを消す
             my_bar.empty()
-            st.table(pd.DataFrame(events))
+            
+            # データフレーム化
+            df = pd.DataFrame(events)
+            
+            # 【新機能1】 CSV化（日本語文字化け防止の utf-8-sig）
+            csv_data = df.to_csv(index=False, encoding='utf-8-sig')
+            
+            # 【新機能1】 CSVダウンロードボタンの設置
+            st.download_button(
+                label="📥 検索結果をCSVでダウンロード",
+                data=csv_data,
+                file_name=f"intern_search_{keyword}.csv",
+                mime="text/csv"
+            )
+            
+            # 【新機能2】 URLをリンク形式にしてテーブル描画
+            st.dataframe(
+                df,
+                column_config={
+                    "URL": st.column_config.LinkColumn("URL", display_text="ページを開く")
+                },
+                hide_index=True,
+                use_container_width=True
+            )
             
     except Exception as e:
         st.error(f"エラーが発生しました: {e}")
