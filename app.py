@@ -86,8 +86,8 @@ if st.button("検索開始"):
             # データフレーム化
             df = pd.DataFrame(events)
             
-            # 【新機能1】 CSV化（日本語文字化け防止の utf-8-sig）
-            csv_data = df.to_csv(index=False, encoding='utf-8-sig')
+           # 【新機能1】 CSV化（BOM付きUTF-8のバイトデータに変換）
+            csv_data = df.to_csv(index=False).encode('utf-8-sig')
             
             # 【新機能1】 CSVダウンロードボタンの設置
             st.download_button(
